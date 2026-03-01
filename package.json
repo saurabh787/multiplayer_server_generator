@@ -1,0 +1,40 @@
+{
+  "name": "multiplayer_game_framework",
+  "version": "1.0.0",
+  "description": "Authoritative multiplayer framework core engine",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "prestart": "npm run build",
+    "start": "node dist/src/index.js",
+    "test": "tsx --test tests/**/*.test.ts",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "simulate": "tsx scripts/simulate.ts",
+    "stress": "tsx scripts/stress.ts",
+    "stress:embedded": "set USE_EMBEDDED_SERVER=1&& tsx scripts/stress.ts",
+    "soak:10m": "tsx scripts/soak-10m.ts",
+    "soak:10m:embedded": "set USE_EMBEDDED_SERVER=1&& tsx scripts/soak-10m.ts",
+    "stree": "npm run stress",
+    "test:reconnect": "tsx scripts/reconnect-test.ts",
+    "test:memory": "tsx scripts/memory-soak.ts",
+    "test:eventloop": "tsx scripts/event-loop-lag.ts",
+    "test:snapshot": "tsx scripts/snapshot-integrity.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
