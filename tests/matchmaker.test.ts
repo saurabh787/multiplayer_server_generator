@@ -36,3 +36,20 @@ test("matchmaker cancel removes queued player", () => {
   assert.equal(mm.cancel("p1"), true);
   assert.equal(mm.cancel("p1"), false);
 });
+
+test("matchmaker enqueue deduplicates player across queues", () => {
+  const mm = new Matchmaker();
+  const p1 = createPlayer("p1", "s1");
+  const p2 = createPlayer("p2", "s2");
+
+  mm.enqueue({ player: p1, mode: "realtime", roomType: "arena", requiredPlayers: 2, maxPlayers: 2 });
+  mm.enqueue({ player: p1, mode: "realtime", roomType: "arena", requiredPlayers: 2, maxPlayers: 2 });
+
+  const grouped = mm.enqueue({ player: p2, mode: "realtime", roomType: "arena", requiredPlayers: 2, maxPlayers: 2 });
+  assert.ok(grouped);
+  assert.deepEqual(grouped.players.map((p) => p.id), ["p1", "p2"]);
+
+  mm.enqueue({ player: p1, mode: "turn", roomType: "board", requiredPlayers: 2, maxPlayers: 2 });
+  assert.equal(mm.cancel("p1"), true);
+  assert.equal(mm.cancel("p1"), false);
+});
