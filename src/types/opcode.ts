@@ -14,6 +14,7 @@ export enum Opcode {
   ROOM_LEAVE = 22,
   ROOM_PLAYER_JOIN = 23,
   ROOM_PLAYER_LEAVE = 24,
+  ROOM_MESSAGE = 25,
 
   INPUT = 30,
   SNAPSHOT = 31,

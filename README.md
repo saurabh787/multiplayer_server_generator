@@ -1,133 +1,90 @@
-# Multiplayer Framework (V1 Engine Core)
+# multiplayer_game_framework
 
-Authoritative multiplayer server core with:
-- WebSocket transport (`ws`)
-- MessagePack protocol (`1-byte opcode + payload`)
-- Realtime and turn room engines
-- FIFO matchmaking
-- Plugin hooks
-- Safety guards and graceful shutdown
+A server-authoritative multiplayer game framework for fast 2D and session-based games.
+It gives you room lifecycle control, built-in matchmaking, reconnect identity restoration, and transport injection.
+The public API is intentionally small: define rooms, start the server, and handle player messages.
+Internal/runtime modules are boundary-locked so integrations stay stable at the package root.
 
-## Quick Start
+## Why Use It
 
-1. `npm install`
-2. `npm run dev`
-3. WebSocket endpoint: `ws://localhost:3000`
-4. Metrics endpoint: `http://localhost:3001/metrics`
+- Server-authoritative architecture
+- `defineRoom` API with lifecycle hooks
+- Swappable transport layer
+- Auto room disposal
+- Matchmaking queue
+- Reconnect identity restoration
+- Lifecycle hooks for room behavior
+- Hardening validated with soak and integration tests
 
-## Scripts
+## Installation
 
-- `npm run dev`: run server from TypeScript
-- `npm run build`: compile to `dist`
-- `npm run start`: run compiled server
-- `npm run test`: run unit + integration tests
-- `npm run lint`: TypeScript type check
-- `npm run simulate`: multiplayer simulation clients
-- `npm run stress`: run stress against your running server (`ws://localhost:3000`, metrics at `:3001`)
-- `npm run stress:embedded`: run stress with an internal temporary server (`ws://localhost:3210`, metrics `:3211`)
-- `npm run soak:10m`: run 100-client 10-minute soak against external server (`ws://localhost:3000`)
-- `npm run soak:10m:embedded`: run the same soak with embedded server mode
-- `npm run stree`: alias to `npm run stress`
-- `npm run test:reconnect`: reconnect smoke test
-- `npm run test:memory`: memory soak monitor
-- `npm run test:eventloop`: event loop lag monitor
-- `npm run test:snapshot`: snapshot integrity monitor
+```bash
+npm install multiplayer_game_framework
+```
 
-## Protocol Contract
+## 2-Minute Quick Start
 
-Packet format:
-- byte `0`: opcode
-- bytes `1..n`: MessagePack payload object
+```ts
+import { GameServer, Room, PlayerContext } from "multiplayer_game_framework";
 
-### Opcodes
+class BattleRoom extends Room<{ moves: number }> {
+  public onCreate(): void {
+    this.state = { moves: 0 };
+  }
 
-- System: `1 AUTH`, `2 AUTH_OK`, `3 ERROR`, `4 PING`, `5 PONG`
-- Matchmaking: `10 MATCH_JOIN`, `11 MATCH_FOUND`, `12 MATCH_CANCEL`
-- Room: `20 ROOM_JOIN`, `21 ROOM_JOINED`, `22 ROOM_LEAVE`, `23 ROOM_PLAYER_JOIN`, `24 ROOM_PLAYER_LEAVE`
-- Realtime: `30 INPUT`, `31 SNAPSHOT`
-- Turn: `40 TURN_ACTION`, `41 TURN_RESULT`
+  public onJoin(player: PlayerContext): void {
+    this.send(player, "welcome", { id: player.id });
+  }
 
-### Standard Errors
+  public onMessage(player: PlayerContext, type: string, _payload: unknown): void {
+    if (type !== "move") return;
+    this.state.moves += 1;
+    this.send(player, "moved", { moves: this.state.moves });
+  }
+}
 
-- `1001 invalid_packet`
-- `1002 unknown_opcode`
-- `1003 not_authenticated`
-- `1004 room_not_found`
-- `1005 room_full`
-- `1006 invalid_turn`
+const server = new GameServer({
+  config: { port: 3000, tickRate: 20 }
+});
 
-## Lifecycle
+server.defineRoom("battle", BattleRoom, {
+  engine: "realtime",
+  maxClients: 8,
+  autoDispose: true
+});
 
-1. Connect
-2. Send `AUTH` with `{ protocolVersion: 1 }`
-3. Receive `AUTH_OK`
-4. Send `MATCH_JOIN` or `ROOM_JOIN`
-5. For realtime rooms, send `INPUT` and receive `SNAPSHOT`
-6. For turn rooms, send `TURN_ACTION` and receive `TURN_RESULT`
+await server.start();
+```
 
-## Folder Layout
+## Minimal Usage Example
 
-- `src/protocol`: encode/decode and protocol guards
-- `src/transport`: WebSocket transport + heartbeat + metrics endpoint
-- `src/server`: main game server router and orchestration
-- `src/room`: room abstractions, manager, sample rooms
-- `src/engine`: realtime and turn engines
-- `src/player`: session/player models
-- `src/matchmaking`: queue-based matcher
-- `src/plugins`: plugin contracts + logger/metrics plugins
-- `tests`: unit and integration tests
+```ts
+import { GameServer, Room, PlayerContext } from "multiplayer_game_framework";
 
-## Extension Points
+class PingRoom extends Room<{ pings: number }> {
+  public onCreate(): void {
+    this.state = { pings: 0 };
+  }
 
-- Custom room factories via `GameServer` options:
-  - `createRealtimeRoom`
-  - `createTurnRoom`
-- Plugin hooks via `PluginSystem` (`onConnect`, `onAuth`, `onRoomCreate`, `onInput`, `beforeSnapshot`, `afterSnapshot`, etc.)
+  public onMessage(_player: PlayerContext, type: string, _payload: unknown): void {
+    if (type === "ping") {
+      this.state.pings += 1;
+      this.broadcast("pong", { total: this.state.pings });
+    }
+  }
+}
 
-## V1 Checklist
+const server = new GameServer();
+server.defineRoom("ping", PingRoom, { maxClients: 16, autoDispose: true });
+await server.start();
+```
 
-- [x] Protocol layer with max packet checks
-- [x] Session/auth lifecycle
-- [x] Room manager and lifecycle states
-- [x] Realtime fixed-timestep engine
-- [x] Turn action engine with turn validation
-- [x] Matchmaking queue
-- [x] Plugin system with error isolation
-- [x] Graceful shutdown
-- [x] Metrics endpoint
-- [x] Unit + integration tests
+## Full Documentation
 
-## Validation Ladder (Requested Execution Order)
-
-1. Unit foundation safety:
-`npm run test` (covers protocol, opcode map, room transitions, matchmaking, rate limiting, snapshot builder)
-2. Integration room/engine checks:
-Included in `tests/room-engine.integration.test.ts` and `tests/integration.test.ts`
-3. Multiplayer simulation:
-`npm run simulate` (set `CLIENTS=100` for heavier run)
-4. Stress tests:
-`npm run stress`
-If no external server is running, use `npm run stress:embedded`.
-5. 10-minute soak:
-`npm run soak:10m`
-Artifacts generated in repo root:
-- `telemetry.log` (JSONL every 5s)
-- `slow-ticks.log` (JSONL slow tick events)
-5. Reconnection:
-`npm run test:reconnect`
-6. Memory leak watch:
-`npm run test:memory` for 30-60 minutes
-7. Event loop lag:
-`npm run test:eventloop`
-8. Snapshot integrity:
-`npm run test:snapshot`
-
-JS SDK and Unity smoke tests are deferred because V1 scope explicitly excludes SDK delivery.
-
-## Deferred (Post-V1)
-
-- JS SDK packaging
-- Unity SDK
-- CLI scaffolding
-- Delta compression/interpolation/prediction
-- Multi-node/distributed room execution
+- Full Documentation: [`/docs`](./docs)
+- Start here: [Introduction](./docs/introduction.md)
+- Quick setup: [Getting Started](./docs/getting-started.md)
+- System design: [Architecture](./docs/architecture.md)
+- API reference: [docs/api](./docs/api)
+- Practical guides: [docs/guides](./docs/guides)
+- Debugging: [Troubleshooting](./docs/troubleshooting.md)

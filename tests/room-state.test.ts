@@ -37,10 +37,14 @@ test("room state transitions and player lifecycle", () => {
   room.processPendingRemovals();
   assert.equal(room.players.size, 1);
   assert.equal(room.pendingRemovals.size, 0);
+  assert.equal(p1.roomId, undefined);
+  assert.equal(p1.active, false);
 
   room.destroy();
   assert.equal(room.state, "destroyed");
   assert.equal(room.destroyed, true);
+  assert.equal(p2.roomId, undefined);
+  assert.equal(p2.active, false);
   assert.equal(room.addPlayer(createPlayer("p3", "s3")), false);
 });
 

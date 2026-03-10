@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "description": "Authoritative multiplayer framework core engine",
   "main": "dist/src/index.js",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx src/index.ts",
+    "dev": "tsx src/main.ts",
     "prestart": "npm run build",
-    "start": "node dist/src/index.js",
+    "start": "node dist/src/main.js",
     "test": "tsx --test tests/**/*.test.ts",
     "lint": "tsc -p tsconfig.json --noEmit",
     "simulate": "tsx scripts/simulate.ts",

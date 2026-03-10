@@ -18,6 +18,7 @@ test("opcode registry includes all expected public opcodes", () => {
     Opcode.ROOM_LEAVE,
     Opcode.ROOM_PLAYER_JOIN,
     Opcode.ROOM_PLAYER_LEAVE,
+    Opcode.ROOM_MESSAGE,
     Opcode.INPUT,
     Opcode.SNAPSHOT,
     Opcode.TURN_ACTION,

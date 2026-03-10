@@ -13,7 +13,7 @@ export interface AuthOkPayload {
 }
 
 export interface MatchJoinPayload {
-  mode: "realtime" | "turn";
+  mode?: "realtime" | "turn";
   roomType: string;
   requiredPlayers?: number;
   maxPlayers?: number;
@@ -38,6 +38,11 @@ export interface RoomJoinedPayload {
 export interface RoomPlayerEventPayload {
   roomId: string;
   playerId: string;
+}
+
+export interface RoomMessagePayload {
+  type: string;
+  payload: unknown;
 }
 
 export interface InputPayload {
@@ -70,6 +75,7 @@ export type PacketPayload =
   | RoomJoinPayload
   | RoomJoinedPayload
   | RoomPlayerEventPayload
+  | RoomMessagePayload
   | InputPayload
   | SnapshotPayload
   | TurnActionPayload

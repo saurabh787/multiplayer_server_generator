@@ -8,6 +8,7 @@ export interface ServerConfig {
   sessionTimeoutMs: number;
   maxInputsPerSecond: number;
   maxInputBufferPerPlayer: number;
+  maxBufferedAmountBytes: number;
   slowTickThresholdMs: number;
   reconnectGraceMs: number;
 }
@@ -22,6 +23,7 @@ export const DEFAULT_CONFIG: ServerConfig = {
   sessionTimeoutMs: 15_000,
   maxInputsPerSecond: 60,
   maxInputBufferPerPlayer: 200,
+  maxBufferedAmountBytes: 1_000_000,
   slowTickThresholdMs: 10,
   reconnectGraceMs: 10_000
 };
